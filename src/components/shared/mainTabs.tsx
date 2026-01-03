@@ -6,6 +6,7 @@ import CalenderScreen from '../../pages/calender';
 import { TouchableOpacity } from 'react-native';
 import { styles } from '../../style';
 import { LibraryScreen } from '../../pages/library';
+import { ProfileScreen } from '../../pages/myprofile';
 
 export function MainTabs() {
   const Tab = createBottomTabNavigator();
@@ -52,7 +53,7 @@ export function MainTabs() {
       />
       <Tab.Screen
         name="Profile"
-        component={HomePage}
+        component={ProfileScreen}
         options={{
           tabBarIcon: ({ color }) => <User color={color} size={24} />,
         }}

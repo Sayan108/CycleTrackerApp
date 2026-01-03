@@ -2,6 +2,24 @@ import { Dimensions, StyleSheet } from 'react-native';
 const { width } = Dimensions.get('window');
 
 export const styles = StyleSheet.create({
+  stepContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  datePickerPlaceholder: {
+    backgroundColor: '#F7FAFC',
+    padding: 18,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  modeCardActive: {
+    backgroundColor: '#FF7E67',
+    borderColor: '#FF7E67',
+    transform: [{ scale: 1.02 }], // Subtle pop effect
+  },
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   scrollContainer: { flexGrow: 1 },
   safe: {
@@ -154,7 +172,7 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#EEE',
   },
-  modeCardActive: { backgroundColor: '#FF8E8E', borderColor: '#FF8E8E' },
+  // modeCardActive: { backgroundColor: '#FF8E8E', borderColor: '#FF8E8E' },
   modeCardText: {
     fontSize: 18,
     fontWeight: '700',
@@ -249,8 +267,8 @@ export const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 18,
   },
-  statLabel: { color: 'white', fontSize: 12, opacity: 0.8 },
-  statVal: { color: 'white', fontSize: 18, fontWeight: '700', marginTop: 4 },
+  statLabel: { color: 'black', fontSize: 12, opacity: 0.8 },
+  statVal: { color: 'black', fontSize: 18, fontWeight: '700', marginTop: 4 },
   whiteCard: {
     backgroundColor: 'white',
     borderRadius: 24,
@@ -344,4 +362,200 @@ export const styles = StyleSheet.create({
   },
   readTime: { color: '#999', fontSize: 12 },
   readMore: { color: '#FF8E8E', fontWeight: '700' },
+
+  pageTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+
+  pageSubtitle: {
+    color: '#777',
+    marginBottom: 16,
+  },
+
+  card: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+
+  inputLabel: {
+    color: '#666',
+    marginBottom: 4,
+  },
+
+  input: {
+    borderWidth: 1,
+    borderColor: '#DDD',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+  },
+
+  toggleRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+
+  toggleButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: '#F1F1F1',
+  },
+
+  toggleButtonActive: {
+    backgroundColor: '#008B8B',
+  },
+
+  toggleText: {
+    textAlign: 'center',
+    color: '#444',
+    fontWeight: '500',
+  },
+
+  toggleTextActive: {
+    color: '#FFF',
+  },
+
+  dateButton: {
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: '#F5F5F5',
+  },
+
+  dateButtonText: {
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+
+  infoBox: {
+    backgroundColor: '#F8F9FA',
+    padding: 12,
+    borderRadius: 12,
+  },
+
+  infoText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+  },
+
+  profileHeader: { alignItems: 'center', marginVertical: 20 },
+  avatarContainer: { width: 90, height: 90, position: 'relative' },
+  avatarGradient: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  editBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#1CB0A8',
+    padding: 6,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'white',
+  },
+  userNameInput: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#1A3B5D',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  userEmail: { fontSize: 13, color: '#999', marginTop: 4 },
+
+  summaryCard: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    marginHorizontal: 20,
+    borderRadius: 20,
+    padding: 15,
+    elevation: 2,
+    marginBottom: 20,
+  },
+  statItem: { flex: 1, alignItems: 'center' },
+  statBorder: {
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: '#F0F0F0',
+  },
+
+  iconBg: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  rowHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
+
+  toggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    padding: 4,
+  },
+  tBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  tBtnActive: { backgroundColor: '#FF7E67' },
+  tText: { fontSize: 14, color: '#666', fontWeight: '600', marginLeft: 8 },
+  tTextActive: { color: 'white' },
+
+  inputRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  rowLabel: { fontSize: 15, color: '#444', fontWeight: '500' },
+  smallInput: {
+    backgroundColor: '#F9FAFB',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    width: 60,
+    textAlign: 'center',
+    fontWeight: 'bold',
+    color: '#FF7E67',
+  },
+
+  lmpButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#FFF5F5',
+    padding: 15,
+    borderRadius: 12,
+  },
+  lmpLabel: { color: '#FF7E67', fontWeight: '600' },
+  lmpValue: { color: '#333', fontWeight: 'bold' },
+
+  footerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+    marginTop: 10,
+  },
+  footerText: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
+    marginLeft: 10,
+    lineHeight: 18,
+  },
 });
