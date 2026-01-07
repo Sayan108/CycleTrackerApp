@@ -1,33 +1,38 @@
 // src/hooks/useReproductiveTracker/useReproductiveTracker.ts
 
-import { useMemo } from 'react';
-import {
-  AppMode,
-  CycleInput,
-  DayStatus,
-  PregnancyInput,
-  pregnancyMilestones,
-} from './types';
-import { analyzeCycleHistory } from './irreguler';
-import { addDays, diffDays, isBetween } from './utils';
+import {useMemo} from 'react';
+import {useSelector} from 'react-redux';
+// adjust path if needed
 
-export function useReproductiveTracker(
-  mode: AppMode,
-  cycleInput?: CycleInput,
-  pregnancyInput?: PregnancyInput,
-) {
+import {CycleHistory, DayStatus, pregnancyMilestones} from './types';
+
+import {analyzeCycleHistory} from './irreguler';
+import {addDays, diffDays, isBetween} from './utils';
+import {AppMode} from '../../redux/common.slice';
+import {RootState} from '../../redux';
+
+export function useReproductiveTracker() {
   const today = new Date();
+
+  const {
+    mode,
+    lastPeriodDate,
+    lmpDate,
+    history,
+    averageCycleLength,
+    periodLength,
+  } = useSelector((state: RootState) => state.reproductive);
 
   /* ================== CYCLE ================== */
 
   const cycle = useMemo(() => {
-    if (mode !== 'cycle' || !cycleInput) return null;
+    if (mode !== AppMode.CYCLE) return null;
 
-    const lpd = new Date(cycleInput.lastPeriodDate);
-    const historyAnalysis = analyzeCycleHistory(cycleInput.history);
+    const lpd = new Date(lastPeriodDate);
+    const historyAnalysis = analyzeCycleHistory(history as CycleHistory[]);
 
     const cycleLength =
-      historyAnalysis.predictedCycleLength || cycleInput.averageCycleLength;
+      historyAnalysis.predictedCycleLength || averageCycleLength;
 
     const ovulation = addDays(lpd, cycleLength - 14);
     const fertileStart = addDays(ovulation, -5);
@@ -37,10 +42,11 @@ export function useReproductiveTracker(
     const dayStatus = (date: Date): DayStatus => {
       const day = diffDays(lpd, date) + 1;
 
-      if (day >= 1 && day <= cycleInput.periodLength) return 'period';
+      if (day >= 1 && day <= periodLength) return 'period';
 
-      if (isBetween(date, fertileStart, fertileEnd))
+      if (isBetween(date, fertileStart, fertileEnd)) {
         return date.getTime() === ovulation.getTime() ? 'ovulation' : 'fertile';
+      }
 
       if (isBetween(date, nextPeriod, addDays(nextPeriod, 2)))
         return 'predicted-period';
@@ -55,14 +61,14 @@ export function useReproductiveTracker(
       irregularityScore: historyAnalysis.irregularityScore,
       dayStatus,
     };
-  }, [mode, cycleInput]);
+  }, [mode, lastPeriodDate, history, averageCycleLength, periodLength]);
 
   /* ================== PREGNANCY ================== */
 
   const pregnancy = useMemo(() => {
-    if (mode !== 'pregnancy' || !pregnancyInput) return null;
+    if (mode !== AppMode.PREGNANCY) return null;
 
-    const lmp = new Date(pregnancyInput.lmpDate);
+    const lmp = new Date(lmpDate);
     const daysPregnant = diffDays(lmp, today);
     const weeks = Math.floor(daysPregnant / 7);
     const dueDate = addDays(lmp, 280);
@@ -85,7 +91,7 @@ export function useReproductiveTracker(
       milestones: activeMilestones,
       dayStatus,
     };
-  }, [mode, pregnancyInput]);
+  }, [mode, lmpDate, today]);
 
   return {
     today,

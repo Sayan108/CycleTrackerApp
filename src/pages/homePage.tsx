@@ -20,12 +20,15 @@ import { LogItem } from '../components/homescreen/logItem';
 import { WellnessRow } from '../components/homescreen/wellnessItem';
 import FirstStat from '../components/homescreen/firstStat';
 import { useReproductiveTracker } from '../hooks/useReProductiveEngine/useReproductiveTracker';
+import {RootState, useAppSelector} from '../redux';
 
 // Import your hook
 
 const HomePage: React.FC = () => {
   // 2. Initialize Hook with actual data (Replace with your actual state/database values)
   const {  cycle, pregnancy, today } = useReproductiveTracker();
+
+  const {mode} = useAppSelector((state: RootState) => state.reproductive);
 
   return (
     <AppLayout title="Home">
