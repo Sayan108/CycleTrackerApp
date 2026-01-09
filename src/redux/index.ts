@@ -1,4 +1,4 @@
-import { configureStore, combineReducers } from '@reduxjs/toolkit';
+import {configureStore, combineReducers} from '@reduxjs/toolkit';
 import {
   persistStore,
   persistReducer,
@@ -10,14 +10,18 @@ import {
   REGISTER,
 } from 'redux-persist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
+import {TypedUseSelectorHook, useDispatch, useSelector} from 'react-redux';
 
 import reproductiveReducer from './common.slice';
+
+import logsReducer from './log.slice';
 
 // 1. Combine all your reducers
 const rootReducer = combineReducers({
   // Example: reproductive: reproductiveReducer,
   reproductive: reproductiveReducer,
+
+  logs: logsReducer,
 });
 
 // 2. Setup Persistence Config

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, {useMemo, useState} from 'react';
 import {
   Text,
   TouchableOpacity,
@@ -6,278 +6,387 @@ import {
   ScrollView,
   Dimensions,
   StyleSheet,
+  Platform,
 } from 'react-native';
 import {
   ChevronLeft,
   ChevronRight,
   Droplet,
-  Star,
   Heart,
   Baby,
   Info,
+  Zap,
+  Calendar as CalendarIcon,
 } from 'lucide-react-native';
-import { useReproductiveTracker } from '../../hooks/useReProductiveEngine/useReproductiveTracker';
+import {useReproductiveTracker} from '../../hooks/useReProductiveEngine/useReproductiveTracker';
+import {RootState, useAppSelector} from '../../redux';
+import {SectionHeader} from '../shared/sectionHeader';
 
-const { width } = Dimensions.get('window');
-const CELL_SIZE = (width - 72) / 7;
+const {width} = Dimensions.get('window');
+
+const THEME = {
+  t1: '#FF9AA2', // 1st Tri
+  t2: '#B583FF', // 2nd Tri
+  t3: '#74C0FC', // 3rd Tri
+  period: '#FF4D4D',
+  fertile: '#4CAF50',
+  ovulation: '#9C27B0',
+  bg: '#F8F9FD',
+};
+
+const COLORS = {
+  text: '#1A1A1A',
+  sub: '#999',
+  card: '#FFF',
+  border: '#EEE',
+};
 
 export const CalendarDashboard = () => {
-  const [mode, setMode] = React.useState<'cycle' | 'pregnancy'>('cycle');
-  const [currentDate, setCurrentDate] = React.useState(new Date());
+  const {mode} = useAppSelector((state: RootState) => state.reproductive);
+  const tracker = useReproductiveTracker();
 
-  // Integration with your Hook
-  const tracker = useReproductiveTracker(
-    mode,
-    {
-      lastPeriodDate: '2023-10-01', // Example data
-      periodLength: 5,
-      averageCycleLength: 28,
-      history: [],
-    },
-    { lmpDate: '2023-08-01' },
-  );
+  // Navigation State
+  const [viewDate, setViewDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
+  const isPregnancy = mode === 'pregnancy';
 
-  const calendarDays = useMemo(() => {
-    const days = [];
+  // --- 1. CALENDAR GRID LOGIC ---
+  const monthsData = useMemo(() => {
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const daysInPrevMonth = new Date(year, month, 0).getDate();
 
-    // Fillers for previous month
-    for (let i = firstDay - 1; i >= 0; i--) {
-      days.push({
-        date: new Date(year, month - 1, daysInPrevMonth - i),
-        current: false,
-      });
-    }
-    // Current month
+    const days = [];
+    for (let i = 0; i < firstDay; i++) days.push(null);
     for (let d = 1; d <= daysInMonth; d++) {
-      days.push({ date: new Date(year, month, d), current: true });
-    }
-    // Fillers for next month to keep grid 6x7
-    while (days.length < 42) {
-      const nextD: any = days.length - (firstDay + daysInMonth) + 1;
-      days.push({ date: new Date(year, month + 1, nextD), current: false });
+      days.push(new Date(year, month, d));
     }
     return days;
-  }, [year, month]);
+  }, [viewDate]);
 
-  const renderIcon = (status: string) => {
-    const size = 12;
-    switch (status) {
-      case 'period':
-        return <Droplet size={size} color="#FF7E67" fill="#FF7E67" />;
-      case 'ovulation':
-        return <Star size={size} color="#8E7AB5" fill="#8E7AB5" />;
-      case 'fertile':
-        return <Heart size={size} color="#61B15A" fill="#61B15A" />;
-      case 'trimester-1':
-      case 'trimester-2':
-      case 'trimester-3':
-        return <Baby size={size} color="#FF9AA2" />;
-      default:
-        return null;
-    }
+  // --- 2. PREDICTIVE HIGHLIGHT LOGIC ---
+  const getDayStatus = (date: Date) => {
+    if (!date) return null;
+
+    // Always use the tracker hook to determine status for specific dates
+    // This enables future month predictions (February, March, etc.)
+    const status = isPregnancy
+      ? tracker.pregnancy?.dayStatus(date)
+      : tracker.cycle?.dayStatus(date);
+
+    return status;
   };
 
+  const activeStatus = getDayStatus(selectedDate);
+
   return (
-    <View style={styles.container}>
-      {/* 1. TOP SUMMARY CARD (Hook Data) */}
-      <View style={styles.summaryCard}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* 1. STATUS SUMMARY CARD */}
+      <View
+        style={[styles.heroCard, isPregnancy && {backgroundColor: THEME.t2}]}>
         <View>
-          <Text style={styles.summaryTitle}>
-            {mode === 'cycle' ? 'Cycle Status' : 'Pregnancy Progress'}
+          <Text style={styles.heroLabel}>
+            {isPregnancy ? 'PREGNANCY TIMELINE' : 'CYCLE STATUS'}
           </Text>
-          <Text style={styles.summaryValue}>
-            {mode === 'cycle'
-              ? `Next period: ${tracker.cycle?.nextPeriod.toLocaleDateString()}`
-              : `${tracker.pregnancy?.weeks} Weeks, ${tracker.pregnancy?.trimester} Trimester`}
+          <Text style={styles.heroMain}>
+            {isPregnancy
+              ? `Week ${tracker.pregnancy?.weeks}`
+              : tracker.cycle?.daysUntilNextPeriod}
           </Text>
-        </View>
-        <View style={styles.summaryBadge}>
-          <Info size={16} color="#FFF" />
-        </View>
-      </View>
-
-      {/* 2. MODE SWITCHER */}
-      <View style={styles.tabBar}>
-        {['cycle', 'pregnancy'].map(t => (
-          <TouchableOpacity
-            key={t}
-            onPress={() => setMode(t as any)}
-            style={[styles.tabItem, mode === t && styles.tabActive]}
-          >
-            <Text style={[styles.tabText, mode === t && styles.tabTextActive]}>
-              {t.toUpperCase()}
+          <View style={styles.pill}>
+            <Text style={styles.pillText}>
+              {isPregnancy
+                ? tracker.pregnancy?.trimesterLabel + ' Trimester'
+                : 'Predicted Window'}
             </Text>
-          </TouchableOpacity>
-        ))}
+          </View>
+        </View>
+        <CalendarIcon
+          color="#FFF"
+          size={60}
+          style={styles.heroBgIcon}
+          opacity={0.15}
+        />
       </View>
 
-      {/* 3. CALENDAR CARD */}
-      <View style={styles.calendarCard}>
-        <View style={styles.header}>
-          <Text style={styles.monthLabel}>
-            {currentDate.toLocaleString('default', {
-              month: 'long',
-              year: 'numeric',
-            })}
-          </Text>
-          <View style={styles.navGroup}>
+      {/* 2. CALENDAR CARD */}
+      <View style={styles.calendarWrapper}>
+        <View style={styles.monthHeader}>
+          <View>
+            <Text style={styles.monthTitle}>
+              {viewDate.toLocaleString('default', {month: 'long'})}
+            </Text>
+            <Text style={styles.yearTitle}>{viewDate.getFullYear()}</Text>
+          </View>
+          <View style={styles.navButtons}>
             <TouchableOpacity
-              onPress={() => setCurrentDate(new Date(year, month - 1, 1))}
-            >
-              <ChevronLeft size={20} color="#333" />
+              onPress={() =>
+                setViewDate(
+                  new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1),
+                )
+              }
+              style={styles.navBtn}>
+              <ChevronLeft size={22} color={COLORS.text} />
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => setCurrentDate(new Date(year, month + 1, 1))}
-            >
-              <ChevronRight size={20} color="#333" />
+              onPress={() =>
+                setViewDate(
+                  new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1),
+                )
+              }
+              style={styles.navBtn}>
+              <ChevronRight size={22} color={COLORS.text} />
             </TouchableOpacity>
           </View>
         </View>
 
-        <View style={styles.weekRow}>
+        <View style={styles.weekLabels}>
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
-            <Text key={d} style={styles.weekLetter}>
+            <Text key={d} style={styles.weekText}>
               {d}
             </Text>
           ))}
         </View>
 
-        <View style={styles.grid}>
-          {calendarDays.map((item, i) => {
-            const status =
-              mode === 'cycle'
-                ? tracker.cycle?.dayStatus(item.date)
-                : tracker.pregnancy?.dayStatus();
+        <View style={styles.calendarGrid}>
+          {monthsData.map((date, index) => {
+            if (!date)
+              return <View key={`p-${index}`} style={styles.dayCell} />;
 
+            const status = getDayStatus(date);
             const isToday =
-              item.date.toDateString() === tracker.today.toDateString();
+              date.toDateString() === tracker.today.toDateString();
+            const isSelected =
+              date.toDateString() === selectedDate.toDateString();
 
             return (
-              <View key={i} style={styles.cell}>
-                <TouchableOpacity
+              <TouchableOpacity
+                key={date.toISOString()}
+                onPress={() => setSelectedDate(date)}
+                style={styles.dayCell}>
+                <View
                   style={[
                     styles.dayCircle,
-                    status === 'period' && styles.bgPeriod,
-                    status === 'fertile' && styles.bgFertile,
-                    isToday && styles.todayBorder,
-                  ]}
-                >
+                    status === 'period' || status === 'predicted-period'
+                      ? styles.bgPeriod
+                      : null,
+                    status === 'ovulation' ? styles.bgOvulation : null,
+                    status === 'fertile' || status === 'fertile-focus'
+                      ? styles.bgFertile
+                      : null,
+                    isToday && styles.todayCircle,
+                    isSelected && styles.selectedCircle,
+                  ]}>
                   <Text
                     style={[
-                      styles.dayText,
-                      !item.current && styles.nonMonthText,
-                      isToday && styles.todayText,
-                    ]}
-                  >
-                    {item.date.getDate()}
+                      styles.dayNumber,
+                      (status === 'period' ||
+                        status === 'predicted-period') && {color: THEME.period},
+                      status === 'ovulation' && {color: THEME.ovulation},
+                      isSelected && {color: '#FFF'},
+                      isToday &&
+                        !isSelected && {color: THEME.period, fontWeight: '900'},
+                    ]}>
+                    {date.getDate()}
                   </Text>
-                  <View style={styles.iconPos}>
-                    {item.current && renderIcon(status || '')}
+
+                  {/* Small visual dot for trimesters or predicted periods */}
+                  <View style={styles.indicatorRow}>
+                    {status === 'ovulation' && (
+                      <Zap
+                        size={6}
+                        color={THEME.ovulation}
+                        fill={THEME.ovulation}
+                      />
+                    )}
+                    {status === 'predicted-period' && (
+                      <View style={styles.predictiveDot} />
+                    )}
                   </View>
-                </TouchableOpacity>
-              </View>
+                </View>
+              </TouchableOpacity>
             );
           })}
         </View>
       </View>
-    </View>
+
+      {/* 3. SELECTION INSIGHT (Intuitive UX) */}
+      <View style={styles.insightSection}>
+        <SectionHeader
+          title={selectedDate.toLocaleDateString('default', {
+            month: 'short',
+            day: 'numeric',
+          })}
+        />
+        <View style={styles.insightCard}>
+          <Text style={styles.insightStatus}>
+            {activeStatus === 'period' || activeStatus === 'predicted-period'
+              ? 'Predicted Period'
+              : activeStatus === 'ovulation'
+              ? 'Peak Ovulation Day'
+              : activeStatus === 'fertile'
+              ? 'High Fertility Window'
+              : 'Low Fertility Day'}
+          </Text>
+          <Text style={styles.insightDesc}>
+            {isPregnancy
+              ? 'Your baby is developing rapidly this week.'
+              : 'Based on your average cycle, this day is part of your regular patterns.'}
+          </Text>
+        </View>
+      </View>
+
+      {/* 4. LEGEND */}
+      <View style={styles.legendWrapper}>
+        <Text style={styles.legendTitle}>Guide</Text>
+        <View style={styles.legendGrid}>
+          {isPregnancy ? (
+            <>
+              <LegendItem color={THEME.t1} label="1st Tri" />
+              <LegendItem color={THEME.t2} label="2nd Tri" />
+              <LegendItem color={THEME.t3} label="3rd Tri" />
+            </>
+          ) : (
+            <>
+              <LegendItem color={THEME.period} label="Period" icon={Droplet} />
+              <LegendItem
+                color={THEME.ovulation}
+                label="Ovulation"
+                icon={Zap}
+              />
+              <LegendItem color={THEME.fertile} label="Fertile" icon={Heart} />
+            </>
+          )}
+        </View>
+      </View>
+    </ScrollView>
   );
 };
 
+const LegendItem = ({color, label, icon: Icon}: any) => (
+  <View style={styles.legendItem}>
+    <View style={[styles.legendBox, {backgroundColor: color}]}>
+      {Icon && <Icon size={10} color="#FFF" />}
+    </View>
+    <Text style={styles.legendLabel}>{label}</Text>
+  </View>
+);
+
+// ... Styles
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FBFBFE', padding: 16 },
+  container: {flex: 1, backgroundColor: THEME.bg},
+  heroCard: {
+    margin: 20,
+    padding: 25,
+    borderRadius: 30,
+    backgroundColor: THEME.period,
+    overflow: 'hidden',
+  },
+  heroLabel: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  heroMain: {color: '#FFF', fontSize: 26, fontWeight: '900', marginTop: 5},
+  pill: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+    marginTop: 10,
+  },
+  pillText: {color: '#FFF', fontSize: 11, fontWeight: '700'},
+  heroBgIcon: {position: 'absolute', right: -10, bottom: -10},
 
-  // Summary Card
-  summaryCard: {
-    backgroundColor: '#ee9f9fff', // Dark mode accent for contrast
-    padding: 20,
-    borderRadius: 24,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  summaryTitle: {
-    color: '#0c0c0cff',
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-  },
-  summaryValue: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '700',
-    marginTop: 4,
-  },
-  summaryBadge: { backgroundColor: '#e9babaff', padding: 8, borderRadius: 12 },
-
-  // Tabs
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: '#EEE',
-    borderRadius: 16,
-    padding: 4,
-    marginBottom: 20,
-  },
-  tabItem: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRadius: 12,
-  },
-  tabActive: { backgroundColor: '#FFF', elevation: 2 },
-  tabText: { color: '#888', fontWeight: '700', fontSize: 12 },
-  tabTextActive: { color: '#000' },
-
-  // Calendar
-  calendarCard: {
+  calendarWrapper: {
     backgroundColor: '#FFF',
-    borderRadius: 32,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 15,
-    elevation: 3,
+    marginHorizontal: 20,
+    borderRadius: 35,
+    padding: 20,
   },
-  header: {
+  monthHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
   },
-  monthLabel: { fontSize: 18, fontWeight: '800', color: '#2D3436' },
-  navGroup: { flexDirection: 'row', gap: 15 },
+  monthTitle: {fontSize: 22, fontWeight: '900', color: COLORS.text},
+  yearTitle: {fontSize: 14, color: COLORS.sub, fontWeight: '600'},
+  navButtons: {flexDirection: 'row', gap: 10},
+  navBtn: {padding: 8, backgroundColor: '#F5F5F5', borderRadius: 12},
 
-  weekRow: { flexDirection: 'row', marginBottom: 10 },
-  weekLetter: {
-    flex: 1,
+  weekLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  weekText: {
+    width: (width - 80) / 7,
     textAlign: 'center',
-    color: '#BDC3C7',
-    fontSize: 12,
-    fontWeight: '700',
+    color: '#CCC',
+    fontWeight: '800',
+    fontSize: 11,
   },
 
-  grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  cell: { width: `${100 / 7}%`, aspectRatio: 1, padding: 2 },
+  calendarGrid: {flexDirection: 'row', flexWrap: 'wrap'},
+  dayCell: {width: `${100 / 7}%`, aspectRatio: 1, padding: 4},
   dayCircle: {
     flex: 1,
-    borderRadius: 18,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#FAFAFA',
   },
-  dayText: { fontSize: 14, fontWeight: '600', color: '#2D3436' },
-  nonMonthText: { color: '#E0E0E0' },
+  dayNumber: {fontSize: 15, fontWeight: '700', color: '#444'},
 
-  // Status Colors
-  bgPeriod: { backgroundColor: '#FFF0EE' },
-  bgFertile: { backgroundColor: '#F0F9EF' },
-  todayBorder: { borderWidth: 2, borderColor: '#FF7E67' },
-  todayText: { color: '#FF7E67', fontWeight: '800' },
+  bgPeriod: {backgroundColor: THEME.period + '15'},
+  bgOvulation: {backgroundColor: THEME.ovulation + '15'},
+  bgFertile: {backgroundColor: THEME.fertile + '15'},
+  todayCircle: {borderWidth: 2, borderColor: THEME.period},
+  selectedCircle: {backgroundColor: COLORS.text, elevation: 4},
 
-  iconPos: { height: 12, marginTop: 2 },
+  indicatorRow: {height: 8, marginTop: 2},
+  predictiveDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: THEME.period,
+  },
+
+  insightSection: {padding: 20},
+  insightCard: {
+    backgroundColor: '#FFF',
+    padding: 20,
+    borderRadius: 25,
+    marginTop: 10,
+  },
+  insightStatus: {fontSize: 16, fontWeight: '800', color: COLORS.text},
+  insightDesc: {fontSize: 13, color: COLORS.sub, marginTop: 5},
+
+  legendWrapper: {
+    padding: 20,
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+  },
+  legendTitle: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: COLORS.text,
+    marginBottom: 15,
+  },
+  legendGrid: {flexDirection: 'row', justifyContent: 'space-between'},
+  legendItem: {flexDirection: 'row', alignItems: 'center', gap: 6},
+  legendBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  legendLabel: {fontSize: 12, fontWeight: '600', color: '#666'},
 });
